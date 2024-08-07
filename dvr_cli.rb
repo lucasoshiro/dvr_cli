@@ -4,7 +4,7 @@ require 'optparse'
 
 RTSP_PORT = 554
 
-Options = Struct.new :host, :user, :password, :channel
+Options = Struct.new :host, :user, :password, :channel, :action
 
 def parse_argv argv
   args = Options.new ""
@@ -12,7 +12,7 @@ def parse_argv argv
   opt_parser = OptionParser.new do |opts|
     opts.banner = "Usage: example.rb [options]"
 
-    opts.on "-hHOST", "--host=HOST", "Host" do |host|
+    opts.on "-HHOST", "--host=HOST", "Host" do |host|
       args.host = host
     end
 
@@ -26,6 +26,10 @@ def parse_argv argv
 
     opts.on "-cCHANNEL", "--channel=CHANNEL", "Channel" do |channel|
       args.channel = channel
+    end
+
+    opts.on "-w", "--watch" do |channel|
+      args.action = 'watch'
     end
 
     opts.on ""
@@ -47,5 +51,11 @@ def open_vlc options
   `vlc "#{rtsp_url}" &> /dev/null`
 end
 
+def watch options
+  open_vlc options
+end
+
+
+
 options = parse_argv ARGV
-open_vlc options
+send options.action, options
