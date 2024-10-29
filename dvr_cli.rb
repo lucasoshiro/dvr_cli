@@ -70,6 +70,14 @@ def open_vlc options, endpoint, params
   `vlc "#{rtsp_url}" "vlc://quit" &> /dev/null`
 end
 
+def vlc_playback options, start_time, end_time
+  open_vlc options,
+           :playback,
+           channel: options.channel,
+           starttime: start_time.strftime('%Y_%m_%d_%H_%M_%S'),
+           endtime: end_time.strftime('%Y_%m_%d_%H_%M_%S')
+end
+
 def realtime options
   open_vlc options,
            :realmonitor,
@@ -81,11 +89,7 @@ def playback options
   start_time = Time.parse options.start
   end_time = Time.parse options.end
 
-  open_vlc options,
-           :playback,
-           channel: options.channel,
-           starttime: start_time.strftime('%Y_%m_%d_%H_%M_%S'),
-           endtime: end_time.strftime('%Y_%m_%d_%H_%M_%S')
+  vlc_playback options, start_time, end_time
 end
 
 def bisect options
@@ -100,11 +104,7 @@ def bisect options
 
     puts "Showing #{mid}"
 
-    open_vlc options,
-             :playback,
-             channel: options.channel,
-             starttime: mid.strftime('%Y_%m_%d_%H_%M_%S'),
-             endtime: (mid + BISECT_PLAYBACK).strftime('%Y_%m_%d_%H_%M_%S')
+    vlc_playback options, mid, mid + BISECT_PLAYBACK
 
     good = nil
 
@@ -126,12 +126,7 @@ def bisect options
 
   puts "Bisection finished! Time: #{a}"
   
-  open_vlc options,
-           :playback,
-           channel: options.channel,
-           starttime: (mid - BISECT_PLAYBACK).strftime('%Y_%m_%d_%H_%M_%S'),
-           endtime: (mid + BISECT_PLAYBACK).strftime('%Y_%m_%d_%H_%M_%S')
-
+  vlc_playback options, mid - BISECT_PLAYBACK, mid + BISECT_PLAYBACK
 end
 
 options = parse_argv ARGV
