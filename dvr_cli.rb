@@ -28,8 +28,8 @@ def parse_argv argv
       args.channel = channel
     end
 
-    opts.on "-w", "--watch" do |channel|
-      args.action = 'watch'
+    opts.on "-r", "--realtime" do |channel|
+      args.action = :realtime
     end
 
     opts.on ""
@@ -39,23 +39,23 @@ def parse_argv argv
   return args
 end
 
-def open_vlc options
+def open_vlc options, endpoint, params
   rtsp_url = [
     "rtsp://",
     "#{options.user}:#{options.password}@#{options.host}:#{RTSP_PORT}",
-    "/cam/realmonitor?",
-    "channel=#{options.channel}&",
-    "subtype=0"
+    "/cam/#{endpoint}?",
+    [params.map {|k, v| "#{k}=#{v}"}].join('&')
   ].join
 
   `vlc "#{rtsp_url}" &> /dev/null`
 end
 
-def watch options
-  open_vlc options
+def realtime options
+  open_vlc options,
+           :realmonitor,
+           channel: options.channel,
+           subtype: 0
 end
-
-
 
 options = parse_argv ARGV
 send options.action, options
