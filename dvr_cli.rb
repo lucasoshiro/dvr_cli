@@ -5,6 +5,9 @@ require 'time'
 
 RTSP_PORT = 554
 
+BISECT_MIN = 10
+BISECT_PLAYBACK = 2
+
 Options = Struct.new :host, :user, :password, :channel, :action, :start, :end
 
 def parse_argv argv
@@ -45,6 +48,10 @@ def parse_argv argv
       args.action = :playback
     end
 
+    opts.on "-B", "--bisect" do |channel|
+      args.action = :bisect
+    end
+
     opts.on ""
   end
 
@@ -60,7 +67,7 @@ def open_vlc options, endpoint, params
     [params.map {|k, v| "#{k}=#{v}"}].join('&')
   ].join
 
-  `vlc "#{rtsp_url}" &> /dev/null`
+  `vlc "#{rtsp_url}" "vlc://quit" &> /dev/null`
 end
 
 def realtime options
@@ -79,6 +86,52 @@ def playback options
            channel: options.channel,
            starttime: start_time.strftime('%Y_%m_%d_%H_%M_%S'),
            endtime: end_time.strftime('%Y_%m_%d_%H_%M_%S')
+end
+
+def bisect options
+  start_time = Time.parse options.start
+  end_time = Time.parse options.end
+  
+  a = start_time
+  b = end_time
+  
+  while (b - a) >= BISECT_MIN
+    mid = a + (b - a) / 2
+
+    puts "Showing #{mid}"
+
+    open_vlc options,
+             :playback,
+             channel: options.channel,
+             starttime: mid.strftime('%Y_%m_%d_%H_%M_%S'),
+             endtime: (mid + BISECT_PLAYBACK).strftime('%Y_%m_%d_%H_%M_%S')
+
+    good = nil
+
+    while good.nil?
+      print 'good/bad: '
+      s = gets.strip
+
+      good = s == 'good' ? true : s == 'bad' ? false : nil
+    end
+
+    if good
+      a = mid
+    else
+      b = mid
+    end
+
+    puts
+  end
+
+  puts "Bisection finished! Time: #{a}"
+  
+  open_vlc options,
+           :playback,
+           channel: options.channel,
+           starttime: (mid - BISECT_PLAYBACK).strftime('%Y_%m_%d_%H_%M_%S'),
+           endtime: (mid + BISECT_PLAYBACK).strftime('%Y_%m_%d_%H_%M_%S')
+
 end
 
 options = parse_argv ARGV
