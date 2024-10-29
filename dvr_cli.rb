@@ -1,10 +1,11 @@
 #!/usr/bin/env ruby
 
 require 'optparse'
+require 'time'
 
 RTSP_PORT = 554
 
-Options = Struct.new :host, :user, :password, :channel, :action
+Options = Struct.new :host, :user, :password, :channel, :action, :start, :end
 
 def parse_argv argv
   args = Options.new ""
@@ -28,8 +29,20 @@ def parse_argv argv
       args.channel = channel
     end
 
+    opts.on "-sSTART", "--channel=START", "Start" do |start|
+      args.start = start
+    end
+
+    opts.on "-eEND", "--channel=END", "End" do |end_|
+      args.end = end_
+    end
+
     opts.on "-r", "--realtime" do |channel|
       args.action = :realtime
+    end
+
+    opts.on "-P", "--playback" do |channel|
+      args.action = :playback
     end
 
     opts.on ""
@@ -55,6 +68,17 @@ def realtime options
            :realmonitor,
            channel: options.channel,
            subtype: 0
+end
+
+def playback options
+  start_time = Time.parse options.start
+  end_time = Time.parse options.end
+
+  open_vlc options,
+           :playback,
+           channel: options.channel,
+           starttime: start_time.strftime('%Y_%m_%d_%H_%M_%S'),
+           endtime: end_time.strftime('%Y_%m_%d_%H_%M_%S')
 end
 
 options = parse_argv ARGV
