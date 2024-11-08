@@ -32,11 +32,11 @@ def parse_argv argv
       args.channel = channel
     end
 
-    opts.on "-sSTART", "--channel=START", "Start" do |start|
+    opts.on "-sSTART", "--start=START", "Start" do |start|
       args.start = start
     end
 
-    opts.on "-eEND", "--channel=END", "End" do |end_|
+    opts.on "-eEND", "--finish=END", "End" do |end_|
       args.end = end_
     end
 
