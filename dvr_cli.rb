@@ -106,16 +106,16 @@ def bisect options
 
     vlc_playback options, mid, mid + BISECT_PLAYBACK
 
-    good = nil
+    old = nil
 
-    while good.nil?
-      print 'good/bad: '
+    while old.nil?
+      print 'old/new: '
       s = gets.strip
 
-      good = s == 'good' ? true : s == 'bad' ? false : nil
+      old = s == 'old' ? true : s == 'new' ? false : nil
     end
 
-    if good
+    if old
       a = mid
     else
       b = mid
