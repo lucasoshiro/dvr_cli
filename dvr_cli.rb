@@ -9,6 +9,8 @@ RTSP_PORT = 554
 BISECT_MIN = 10
 BISECT_PLAYBACK = 2
 
+N_JOBS = 8
+
 Options = Struct.new(
   :host,
   :user,
@@ -190,21 +192,26 @@ def dataset options
   end_time = Time.parse options.end
   output = options.output || 'out'
 
-  time = start_time
-
   `rm -rf #{output}` if Dir.exists? output
   Dir.mkdir output
 
   Dir.chdir output do
-    while time <= end_time
-      print time
-      filename = time.strftime('%Y_%m_%d_%H_%M_%S') + '.png'
-      params = {channel: options.channel, subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
+    (0...N_JOBS).map do |job|
+      Thread.new do
+        time = start_time + job * interval
 
-      result = get_frame options, :playback, filename, params
+        while time <= end_time
+          filename = time.strftime('%Y_%m_%d_%H_%M_%S') + '.png'
+          params = {channel: options.channel, subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
 
-      puts(result ? ' OK' : ' FAIL')
-      time += interval
+          result = get_frame options, :playback, filename, params
+
+          puts "#{time} #{(result ? ' OK' : ' FAIL')}"
+          time += N_JOBS * interval
+        end
+      end
+    end.each do |thread|
+      thread.join
     end
   end
 end
@@ -215,25 +222,31 @@ def timelapse options
   end_time = Time.parse options.end
   output = options.output || 'out.mp4'
 
-  time = start_time
-  i = 0
-
   tmp_dir = Dir.mktmpdir
 
   Dir.chdir tmp_dir do
-    while time <= end_time
-      print time
-      filename = '%05d.png' % i
-      params = {channel: options.channel, subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
+    (0...N_JOBS).map do |job|
+      i = job
+      Thread.new do
+        time = start_time + job * interval
 
-      result = get_frame options, :playback, filename, params
+        while time <= end_time
+          filename = '%05d.png' % i
+          params = {channel: options.channel, subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
 
-      puts(result ? ' OK' : ' FAIL')
-      time += interval
-      i += 1
+          result = get_frame options, :playback, filename, params
+
+          puts "#{time} #{(result ? ' OK' : ' FAIL')}"
+          time += N_JOBS * interval
+          i += N_JOBS
+        end
+      end
+    end.each do |thread|
+      thread.join
     end
   end
 
+  `rm -f #{output} 2> /dev/null`
   `ffmpeg -framerate 30 -pattern_type glob -i '#{tmp_dir}/*.png' -c:v libx264 -pix_fmt yuv420p #{output}`
   `rm -rf #{tmp_dir}`
 end
