@@ -2,6 +2,7 @@
 
 require 'optparse'
 require 'time'
+require 'tmpdir'
 
 RTSP_PORT = 554
 
@@ -81,6 +82,10 @@ def parse_argv argv
 
     opts.on "-D", "--dataset" do
       args.action = :dataset
+    end
+
+    opts.on "-T", "--timelapse" do
+      args.action = :timelapse
     end
   end
 
@@ -202,6 +207,35 @@ def dataset options
       time += interval
     end
   end
+end
+
+def timelapse options
+  interval = (options.interval || 60).to_i
+  start_time = Time.parse options.start
+  end_time = Time.parse options.end
+  output = options.output || 'out.mp4'
+
+  time = start_time
+  i = 0
+
+  tmp_dir = Dir.mktmpdir
+
+  Dir.chdir tmp_dir do
+    while time <= end_time
+      print time
+      filename = '%05d.png' % i
+      params = {channel: options.channel, subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
+
+      result = get_frame options, :playback, filename, params
+
+      puts(result ? ' OK' : ' FAIL')
+      time += interval
+      i += 1
+    end
+  end
+
+  `ffmpeg -framerate 30 -pattern_type glob -i '#{tmp_dir}/*.png' -c:v libx264 -pix_fmt yuv420p #{output}`
+  `rm -rf #{tmp_dir}`
 end
 
 options = parse_argv ARGV
