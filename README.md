@@ -75,3 +75,12 @@ type `new` if the car appears in the video, or `old` if doesn't appear. In the
 case of `old`, the search proceeds keeping the end time and using using 15h as
 the start time; in the case of `new`, the search proceeds keeping the start time
 and using 15h as the end time. This will repeat until you reach the event.
+
+### Single frame
+
+Retrieves a single frame from a camera, which can be a realtime or a recorded
+image. You'll need to use these options:
+
+```bash
+-F [-t timestamp] [-o output image]
+```
