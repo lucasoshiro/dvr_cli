@@ -8,7 +8,17 @@ RTSP_PORT = 554
 BISECT_MIN = 10
 BISECT_PLAYBACK = 2
 
-Options = Struct.new :host, :user, :password, :channel, :action, :start, :end
+Options = Struct.new(
+  :host,
+  :user,
+  :password,
+  :channel,
+  :action,
+  :start,
+  :end,
+  :time,
+  :output
+)
 
 def parse_argv argv
   args = Options.new ""
@@ -40,33 +50,46 @@ def parse_argv argv
       args.end = end_
     end
 
-    opts.on "-r", "--realtime" do |channel|
+    opts.on "-tTIME", "--time=TIME", "Time" do |time|
+      args.time = time
+    end
+
+    opts.on "-r", "--realtime" do
       args.action = :realtime
     end
 
-    opts.on "-P", "--playback" do |channel|
+    opts.on "-P", "--playback" do
       args.action = :playback
     end
 
-    opts.on "-B", "--bisect" do |channel|
+    opts.on "-B", "--bisect" do
       args.action = :bisect
     end
 
-    opts.on ""
+    opts.on "-F", "--single-frame" do 
+      args.action = :single_frame
+    end
+
+    opts.on "-oOUTPUT", "--output=OUTPUT" do |output|
+      args.output = output
+    end
   end
 
   opt_parser.parse! argv
   return args
 end
 
-def open_vlc options, endpoint, params
-  rtsp_url = [
+def format_rtsp_url options, endpoint, params
+  [
     "rtsp://",
     "#{options.user}:#{options.password}@#{options.host}:#{RTSP_PORT}",
     "/cam/#{endpoint}?",
     [params.map {|k, v| "#{k}=#{v}"}].join('&')
   ].join
+end
 
+def open_vlc options, endpoint, params
+  rtsp_url = format_rtsp_url options, endpoint, params
   `vlc "#{rtsp_url}" "vlc://quit" &> /dev/null`
 end
 
@@ -90,6 +113,11 @@ def playback options
   end_time = Time.parse options.end
 
   vlc_playback options, start_time, end_time
+end
+
+def get_frame options, endpoint, output, params
+  rtsp_url = format_rtsp_url options, endpoint, params
+  `ffmpeg -y -i "#{rtsp_url}" -frames:v 1 -v quiet -rtsp_transport tcp '#{output}'`
 end
 
 def bisect options
@@ -127,6 +155,16 @@ def bisect options
   puts "Bisection finished! Time: #{a}"
   
   vlc_playback options, mid - BISECT_PLAYBACK, mid + BISECT_PLAYBACK
+end
+
+def single_frame options
+  endpoint = options.time.nil? ? :realmonitor : :playback
+  time = options.time && Time.parse(options.time).strftime('%Y_%m_%d_%H_%M_%S')
+  output = options.output || 'out.png'
+  params = {channel: options.channel}.merge(
+             options.time.nil? ? {subtype: 0} : {starttime: time}
+           )
+  get_frame options, endpoint, output, params
 end
 
 options = parse_argv ARGV
