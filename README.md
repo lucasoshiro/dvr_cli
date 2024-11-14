@@ -95,8 +95,21 @@ training a machine learning model. For using it, you'll need to pass these
 options:
 
 ```bash
--D --start <start time> --end <end time> [-i interval (in seconds)] [-o output]
+-D --start <start time> --end <end time> [-i interval (in seconds)] [-o output_directory]
 ```
 
 If the `-o` option is missing, it will default to `out.png`. If the `-i`, it
+will default to 60 seconds.
+
+
+### Timelapse
+
+Similar to Dataset, but this uses the frames to generate a timelapse video. Use
+this with these options:
+
+```bash
+-T --start <start time> --end <end time> [-i interval (in seconds)] [-o output_file]
+```
+
+If the `-o` option is missing, it will default to `out.mp4`. If the `-i`, it
 will default to 60 seconds.
