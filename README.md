@@ -83,5 +83,20 @@ Retrieves a single frame from a camera, which can be a realtime or a recorded
 image. You'll need to use these options:
 
 ```bash
--F [-t timestamp] [-o output image]
+-F [-t timestamp] [-o output_file]
 ```
+
+If the `-o` is missing, it will default to `out.png`
+
+### Dataset
+
+Retrieves several frames in a time range. Useful for generating datasets for
+training a machine learning model. For using it, you'll need to pass these
+options:
+
+```bash
+-D --start <start time> --end <end time> [-i interval (in seconds)] [-o output]
+```
+
+If the `-o` option is missing, it will default to `out.png`. If the `-i`, it
+will default to 60 seconds.
