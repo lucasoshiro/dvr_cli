@@ -1,6 +1,7 @@
 # dvr_cli
 
-CLI client for Intelbras DVRs
+CLI client for Intelbras DVRs. This is a independent project. Neither it or its
+author are affiliated to Intelbras. Use it at your own risk.
 
 ## Requirements
 
