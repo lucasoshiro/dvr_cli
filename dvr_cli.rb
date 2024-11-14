@@ -17,7 +17,8 @@ Options = Struct.new(
   :start,
   :end,
   :time,
-  :output
+  :output,
+  :interval
 )
 
 def parse_argv argv
@@ -54,6 +55,14 @@ def parse_argv argv
       args.time = time
     end
 
+    opts.on "-oOUTPUT", "--output=OUTPUT" do |output|
+      args.output = output
+    end
+
+    opts.on "-iINTERVAL", "--interval=INTERVAL" do |interval|
+      args.interval = interval
+    end
+
     opts.on "-r", "--realtime" do
       args.action = :realtime
     end
@@ -70,8 +79,8 @@ def parse_argv argv
       args.action = :single_frame
     end
 
-    opts.on "-oOUTPUT", "--output=OUTPUT" do |output|
-      args.output = output
+    opts.on "-D", "--dataset" do
+      args.action = :dataset
     end
   end
 
@@ -117,7 +126,10 @@ end
 
 def get_frame options, endpoint, output, params
   rtsp_url = format_rtsp_url options, endpoint, params
-  `ffmpeg -y -i "#{rtsp_url}" -frames:v 1 -v quiet -rtsp_transport tcp '#{output}'`
+  quiet = '-v quiet'
+
+  `ffmpeg -y -i "#{rtsp_url}" -frames:v 1 #{quiet} -rtsp_transport tcp '#{output}'`
+  $? == 0
 end
 
 def bisect options
@@ -165,6 +177,31 @@ def single_frame options
              options.time.nil? ? {subtype: 0} : {starttime: time}
            )
   get_frame options, endpoint, output, params
+end
+
+def dataset options
+  interval = (options.interval || 60).to_i
+  start_time = Time.parse options.start
+  end_time = Time.parse options.end
+  output = options.output || 'out'
+
+  time = start_time
+
+  `rm -rf #{output}` if Dir.exists? output
+  Dir.mkdir output
+
+  Dir.chdir output do
+    while time <= end_time
+      print time
+      filename = time.strftime('%Y_%m_%d_%H_%M_%S') + '.png'
+      params = {channel: options.channel, subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
+
+      result = get_frame options, :playback, filename, params
+
+      puts(result ? ' OK' : ' FAIL')
+      time += interval
+    end
+  end
 end
 
 options = parse_argv ARGV
