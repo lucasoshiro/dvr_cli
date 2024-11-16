@@ -7,6 +7,7 @@ author are affiliated to Intelbras. Use it at your own risk.
 
 - Ruby, version >= 3.0
 - VLC player
+- FFMpeg
 - Unix-like operating system (currently, tested on Mac and Linux)
 
 ## How to run
