@@ -212,7 +212,13 @@ def single_frame options
   time = options.time && Time.parse(options.time).strftime('%Y_%m_%d_%H_%M_%S')
   output = options.output || 'out.png'
   params = options.time.nil? ? {subtype: 0} : {starttime: time}
-  get_frame options, [options.channel], endpoint, output, params
+  get_frame(
+    options,
+    options.channel.split(',').map {|ch| ch.to_i},
+    endpoint,
+    output,
+    params
+  )
 end
 
 def dataset options
@@ -233,7 +239,12 @@ def dataset options
           filename = time.strftime('%Y_%m_%d_%H_%M_%S') + '.png'
           params = {subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
 
-          result = get_frame options, [options.channel], :playback, filename, params
+          result = get_frame(
+            options,
+            options.channel.split(',').map {|ch| ch.to_i},
+            :playback,
+            filename, params
+          )
 
           puts "#{time} #{(result ? ' OK' : ' FAIL')}"
           time += N_JOBS * interval
@@ -263,7 +274,12 @@ def timelapse options
           filename = '%05d.png' % i
           params = {subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
 
-          result = get_frame options, [options.channel], :playback, filename, params
+          result = get_frame(
+            options,
+            options.channel.split(',').map {|ch| ch.to_i},
+            :playback,
+            filename, params
+          )
 
           puts "#{time} #{(result ? ' OK' : ' FAIL')}"
           time += N_JOBS * interval
