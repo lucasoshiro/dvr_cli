@@ -50,7 +50,7 @@ def parse_argv argv
       args.start = start
     end
 
-    opts.on "-eEND", "--finish=END", "End" do |end_|
+    opts.on "-eEND", "--end=END", "End" do |end_|
       args.end = end_
     end
 
@@ -113,8 +113,6 @@ def call_ffmpeg output, params
   params_str = params.map do |k, v|
     v == true ? "-#{k}" : "-#{k} '#{v}'"
   end.join(' ')
-  puts "ffmpeg #{params_str} #{output}"
-
   `ffmpeg #{params_str} #{output}`
 end
 
@@ -263,7 +261,16 @@ def timelapse options
   end
 
   `rm -f #{output} 2> /dev/null`
-  `ffmpeg -framerate 30 -pattern_type glob -i '#{tmp_dir}/*.png' -c:v libx264 -pix_fmt yuv420p #{output}`
+
+  call_ffmpeg(
+    output,
+    framerate: 30,
+    pattern_type: "glob",
+    i: "#{tmp_dir}/*.png",
+    "c:v" => "libx264",
+    pix_fmt: "yuv420p"
+  )
+  
   `rm -rf #{tmp_dir}`
 end
 
