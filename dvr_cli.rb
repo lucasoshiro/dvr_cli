@@ -109,11 +109,20 @@ def open_vlc options, endpoint, params
   `vlc "#{rtsp_url}" "vlc://quit" &> /dev/null`
 end
 
-def call_ffmpeg output, params
+def call_ffmpeg inputs, output, params
+  pattern_type = params.delete :pattern_type
+
+  pattern_type_str = pattern_type.nil? ? '' : "-pattern_type #{pattern_type}"
+
+  input_str = inputs.map do |i|
+    "-i '#{i}'"
+  end.join(' ')
+
   params_str = params.map do |k, v|
     v == true ? "-#{k}" : "-#{k} '#{v}'"
   end.join(' ')
-  `ffmpeg #{params_str} #{output}`
+
+  `ffmpeg #{pattern_type_str} #{input_str} #{params_str} #{output}`
 end
 
 def vlc_playback options, start_time, end_time
@@ -143,9 +152,9 @@ def get_frame options, endpoint, output, params
   v = 'quiet'
 
   call_ffmpeg(
+    [rtsp_url],
     output,
     y: true,
-    i: rtsp_url,
     'frames:v' => 1,
     v: v,
     rtsp_transport: 'tcp'
@@ -263,14 +272,15 @@ def timelapse options
   `rm -f #{output} 2> /dev/null`
 
   call_ffmpeg(
+    ["#{tmp_dir}/*.png"],
     output,
     framerate: 30,
     pattern_type: "glob",
-    i: "#{tmp_dir}/*.png",
     "c:v" => "libx264",
     pix_fmt: "yuv420p"
   )
   
+  gets
   `rm -rf #{tmp_dir}`
 end
 
