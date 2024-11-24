@@ -147,12 +147,14 @@ def playback options
   vlc_playback options, start_time, end_time
 end
 
-def get_frame options, endpoint, output, params
-  rtsp_url = format_rtsp_url options, endpoint, params
+def get_frame options, channels, endpoint, output, params
+  rtsp_urls = channels.map do |channel|
+    format_rtsp_url options, endpoint, channel: channel, **params
+  end
   v = 'quiet'
 
   call_ffmpeg(
-    [rtsp_url],
+    rtsp_urls,
     output,
     y: true,
     'frames:v' => 1,
@@ -203,10 +205,8 @@ def single_frame options
   endpoint = options.time.nil? ? :realmonitor : :playback
   time = options.time && Time.parse(options.time).strftime('%Y_%m_%d_%H_%M_%S')
   output = options.output || 'out.png'
-  params = {channel: options.channel}.merge(
-             options.time.nil? ? {subtype: 0} : {starttime: time}
-           )
-  get_frame options, endpoint, output, params
+  params = options.time.nil? ? {subtype: 0} : {starttime: time}
+  get_frame options, [options.channel], endpoint, output, params
 end
 
 def dataset options
@@ -225,9 +225,9 @@ def dataset options
 
         while time <= end_time
           filename = time.strftime('%Y_%m_%d_%H_%M_%S') + '.png'
-          params = {channel: options.channel, subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
+          params = {subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
 
-          result = get_frame options, :playback, filename, params
+          result = get_frame options, [options.channel], :playback, filename, params
 
           puts "#{time} #{(result ? ' OK' : ' FAIL')}"
           time += N_JOBS * interval
@@ -255,9 +255,9 @@ def timelapse options
 
         while time <= end_time
           filename = '%05d.png' % i
-          params = {channel: options.channel, subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
+          params = {subtype: 0, starttime: time.strftime('%Y_%m_%d_%H_%M_%S')}
 
-          result = get_frame options, :playback, filename, params
+          result = get_frame options, [options.channel], :playback, filename, params
 
           puts "#{time} #{(result ? ' OK' : ' FAIL')}"
           time += N_JOBS * interval
@@ -280,7 +280,6 @@ def timelapse options
     pix_fmt: "yuv420p"
   )
   
-  gets
   `rm -rf #{tmp_dir}`
 end
 
