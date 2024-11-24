@@ -41,7 +41,7 @@ This will open VNC, and it will show the video stream.
 You can watch recorded streams using this tool using this flags:
 
 ```bash
--P --start <start time> --end <end time>
+-P --start <start time> [--end <end time>]
 ```
 
 The start and finish time must be in the ISO format, like this:
@@ -49,6 +49,9 @@ The start and finish time must be in the ISO format, like this:
 ```bash
 -P --start "2024-10-31 21:00:00" --end "2024-10-31 21:30:00"
 ```
+
+You can omit the end time. In those cases it will default to 1 hour after the
+start time.
 
 ### Bisect
 
