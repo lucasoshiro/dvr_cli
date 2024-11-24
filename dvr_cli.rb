@@ -151,12 +151,18 @@ def get_frame options, channels, endpoint, output, params
   rtsp_urls = channels.map do |channel|
     format_rtsp_url options, endpoint, channel: channel, **params
   end
+
+  n_channels = rtsp_urls.length
+
+  filter_complex_params = n_channels > 1 ? {filter_complex: "vstack=inputs=#{n_channels}"}: {}
+
   v = 'quiet'
 
   call_ffmpeg(
     rtsp_urls,
     output,
     y: true,
+    **filter_complex_params,
     'frames:v' => 1,
     v: v,
     rtsp_transport: 'tcp'
