@@ -24,6 +24,9 @@ or
 ./dvr_cli -H <dvr_host> --user <your user> --password <your password> -c <channel> [other options]
 ```
 
+When using the features Dataset, Timelapse or Single Frame, you can pass
+multiple channels to the `-c`, all of them separated by a comma (`,`).
+
 ## Features
 
 ### Realtime monitor
