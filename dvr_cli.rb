@@ -109,6 +109,15 @@ def open_vlc options, endpoint, params
   `vlc "#{rtsp_url}" "vlc://quit" &> /dev/null`
 end
 
+def call_ffmpeg output, params
+  params_str = params.map do |k, v|
+    v == true ? "-#{k}" : "-#{k} '#{v}'"
+  end.join(' ')
+  puts "ffmpeg #{params_str} #{output}"
+
+  `ffmpeg #{params_str} #{output}`
+end
+
 def vlc_playback options, start_time, end_time
   open_vlc options,
            :playback,
@@ -133,9 +142,16 @@ end
 
 def get_frame options, endpoint, output, params
   rtsp_url = format_rtsp_url options, endpoint, params
-  quiet = '-v quiet'
+  v = 'quiet'
 
-  `ffmpeg -y -i "#{rtsp_url}" -frames:v 1 #{quiet} -rtsp_transport tcp '#{output}'`
+  call_ffmpeg(
+    output,
+    y: true,
+    i: rtsp_url,
+    'frames:v' => 1,
+    v: v,
+    rtsp_transport: 'tcp'
+  )
   $? == 0
 end
 
