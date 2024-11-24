@@ -126,7 +126,7 @@ end
 
 def playback options
   start_time = Time.parse options.start
-  end_time = Time.parse options.end
+  end_time = options.end.nil? ? (start_time + 3600) : Time.parse(options.end)
 
   vlc_playback options, start_time, end_time
 end
